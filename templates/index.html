@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Consulta Ley Bases Argentina</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    /* Estilos adicionales para las nuevas funcionalidades */
+    .disclaimer {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .disclaimer strong {
+      color: #856404;
+    }
+    .consent-container {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .consent-container input[type="checkbox"] {
+      margin-right: 8px;
+    }
+    .char-counter {
+      text-align: right;
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 5px;
+    }
+    .char-counter.warning {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .rate-limit-warning {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">Consulta Ley Bases Argentina</div>
+
+  <!-- ========== DISCLAIMER ========== -->
+  <div class="disclaimer">
+    <strong>⚠️ Aviso Legal:</strong> Esta es una herramienta experimental de consulta sobre la Ley Bases de Argentina. 
+    La interpretación final de la ley debe ser realizada por un profesional legal. 
+    Las consultas se almacenan de forma anónima para mejorar el servicio. No se guardan datos personales identificables.
+  </div>
+
+  <!-- ========== CONSENTIMIENTO ========== -->
+  <div class="consent-container">
+    <label>
+      <input type="checkbox" id="consentCheck" onchange="toggleChat()" />
+      Acepto que mi consulta se guarde anónimamente para mejorar el servicio
+    </label>
+  </div>
+
+  <!-- ========== ADVERTENCIA DE RATE LIMIT ========== -->
+  <div id="rateLimitWarning" class="rate-limit-warning hidden">
+    ⏱️ Has alcanzado el límite de consultas. Por favor espera un momento antes de continuar.
+  </div>
+
+  <!-- ========== MENSAJES ========== -->
+  <div id="messages" class="chat-messages"></div>
+
+  <!-- ========== INPUT ========== -->
+  <div class="chat-input">
+    <input
+      id="msg"
+      type="text"
+      placeholder="Escribe tu consulta sobre la Ley Bases..."
+      onkeydown="if(event.key === 'Enter') send()"
+      oninput="updateCharCounter()"
+      maxlength="500"
+      disabled
+    />
+    <button id="sendBtn" onclick="send()" disabled>Enviar</button>
+  </div>
+  <div id="charCounter" class="char-counter">0 / 500 caracteres</div>
+</div>
+
+<script>
+  const messagesDiv = document.getElementById("messages");
+  const input = document.getElementById("msg");
+  const sendBtn = document.getElementById("sendBtn");
+  const consentCheck = document.getElementById("consentCheck");
+  const charCounter = document.getElementById("charCounter");
+  const rateLimitWarning = document.getElementById("rateLimitWarning");
+
+  const MAX_CHARS = 500;
+  const MIN_CHARS = 3;
+
+  // ========== SESSION ID ==========
+  let sessionId = localStorage.getItem("sessionId");
+  if (!sessionId) {
+    sessionId = "user-" + Date.now() + "-" + Math.random().toString(36).substring(2, 10);
+    localStorage.setItem("sessionId", sessionId);
+  }
+  console.log("Session ID:", sessionId);
+
+  // ========== HABILITAR/DESHABILITAR CHAT ==========
+  function toggleChat() {
+    const isConsented = consentCheck.checked;
+    input.disabled = !isConsented;
+    sendBtn.disabled = !isConsented;
+    
+    if (isConsented) {
+      input.focus();
+    }
+  }
+
+  // ========== CONTADOR DE CARACTERES ==========
+  function updateCharCounter() {
+    const length = input.value.length;
+    charCounter.textContent = `${length} / ${MAX_CHARS} caracteres`;
+    
+    if (length > MAX_CHARS - 50) {
+      charCounter.classList.add("warning");
+    } else {
+      charCounter.classList.remove("warning");
+    }
+  }
+
+  // ========== AGREGAR MENSAJE AL CHAT ==========
+  function addMessage(text, sender) {
+    const div = document.createElement("div");
+    div.className = `message ${sender}`;
+    div.innerText = text;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    return div;
+  }
+
+  // ========== VALIDAR ENTRADA ==========
+  function validateInput(text) {
+    if (text.length < MIN_CHARS) {
+      return "El mensaje debe tener al menos 3 caracteres";
+    }
+    if (text.length > MAX_CHARS) {
+      return `El mensaje excede el límite de ${MAX_CHARS} caracteres`;
+    }
+    
+    // Detectar patrones sospechosos básicos
+    const suspiciousPatterns = [
+      /ignore\s+(previous|above|all)\s+instructions?/i,
+      /system\s*:?\s*(prompt|message)/i,
+      /translate\s+the\s+above/i,
+      /<script/i
+    ];
+    
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(text)) {
+        return "El mensaje contiene contenido no permitido";
+      }
+    }
+    
+    return null;
+  }
+
+  // ========== ENVIAR MENSAJE ==========
+  async function send() {
+    const text = input.value.trim();
+    
+    // Validaciones
+    const validationError = validateInput(text);
+    if (validationError) {
+      addMessage("⚠️ " + validationError, "bot");
+      return;
+    }
+
+    input.value = "";
+    updateCharCounter();
+    addMessage(text, "user");
+
+    const typing = addMessage("Analizando consulta...", "bot");
+    
+    // Deshabilitar input mientras se procesa
+    input.disabled = true;
+    sendBtn.disabled = true;
+
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          message: text, 
+          sessionId: sessionId 
+        })
+      });
+
+      const data = await res.json();
+      
+      // Manejar diferentes códigos de respuesta
+      if (res.status === 429) {
+        // Rate limit excedido
+        typing.innerText = "⏱️ " + (data.error || "Demasiadas consultas. Por favor espera un momento.");
+        rateLimitWarning.classList.remove("hidden");
+        setTimeout(() => rateLimitWarning.classList.add("hidden"), 10000);
+      } else if (res.status === 400) {
+        typing.innerText = "⚠️ " + (data.error || "Solicitud inválida");
+      } else if (res.status >= 500) {
+        typing.innerText = "❌ " + (data.error || "Error del servidor. Por favor intenta nuevamente.");
+      } else if (res.ok) {
+        typing.innerText = data.response || data.answer || data.output || "Sin respuesta";
+      } else {
+        typing.innerText = "❌ Error: " + (data.error || "Error desconocido");
+      }
+
+    } catch (err) {
+      console.error("Error:", err);
+      typing.innerText = "❌ Error de conexión. Verifica tu internet e intenta nuevamente.";
+    } finally {
+      // Rehabilitar input
+      if (consentCheck.checked) {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+  }
+
+  // ========== MENSAJE DE BIENVENIDA ==========
+  window.addEventListener("load", () => {
+    addMessage("👋 ¡Hola! Soy un asistente especializado en la Ley Bases de Argentina. Pregúntame lo que necesites sobre esta legislación.", "bot");
+  });
+</script>
+
+</body>
+</html>

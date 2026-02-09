@@ -11,7 +11,9 @@ load_dotenv()
 app = Flask(__name__)
 
 # CORS para permitir requests desde tu frontend
-CORS(app, origins=["*"])  # Cambia "*" por tu dominio en producción
+#CORS(app, origins=["*"])  # Cambia "*" por tu dominio en producción
+ALLOWED_ORIGINS = os.getenv("FRONTEND_URL", "*")
+CORS(app, origins=[ALLOWED_ORIGINS])
 
 # ==================== CONFIGURACIÓN ====================
 N8N_WEBHOOK = os.getenv("N8N_WEBHOOK_URL")

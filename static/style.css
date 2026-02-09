@@ -4,50 +4,74 @@
     Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
+/* Fondo general */
 body {
   margin: 0;
   padding: 0;
   background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   height: 100vh;
+  width: 100vw;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
 }
 
+/* Contenedor principal: En mobile ocupa todo */
 .chat-container {
   background: #ffffff;
   width: 100%;
-  max-width: 420px;
-  height: 520px;
-  border-radius: 14px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  height: 100%; /* Ocupa todo el alto en celular */
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
+/* ========== RESPONSIVE: AJUSTE PARA PC ========== */
+@media (min-width: 768px) {
+  body {
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .chat-container {
+    width: 100%;
+    max-width: 500px; /* Ancho cómodo para lectura en PC */
+    height: 85vh;     /* Altura proporcional en PC */
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* Cabecera */
 .chat-header {
   padding: 14px 16px;
   background: #2c5364;
   color: #fff;
   font-weight: 600;
   text-align: center;
+  flex-shrink: 0; /* Evita que la cabecera se encoja */
 }
 
+/* Área de mensajes y scroll */
 .chat-messages {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
   background: #f4f7f9;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Burbujas de mensaje */
 .message {
   margin-bottom: 12px;
-  max-width: 80%;
+  max-width: 85%;
   padding: 10px 14px;
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.4;
+  word-wrap: break-word;
 }
 
 .message.user {
@@ -64,11 +88,13 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+/* Área de entrada de texto */
 .chat-input {
   display: flex;
   padding: 12px;
   border-top: 1px solid #ddd;
   background: #fff;
+  flex-shrink: 0; /* Evita que el input se encoja */
 }
 
 .chat-input input {
@@ -78,6 +104,11 @@ body {
   border: 1px solid #ccc;
   font-size: 14px;
   outline: none;
+}
+
+.chat-input input:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
 }
 
 .chat-input input:focus {
@@ -96,6 +127,60 @@ body {
   transition: background 0.2s ease;
 }
 
-.chat-input button:hover {
+.chat-input button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.chat-input button:hover:not(:disabled) {
   background: #203a43;
+}
+
+/* Estilos adicionales para funcionalidades nuevas */
+.disclaimer {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #664d03;
+}
+
+.consent-container {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  border: 1px solid #eee;
+}
+
+.char-counter {
+  text-align: right;
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 4px;
+  padding: 0 12px 8px;
+}
+
+.char-counter.warning {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.rate-limit-warning {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.hidden {
+  display: none;
 }

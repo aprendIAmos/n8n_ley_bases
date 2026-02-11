@@ -29,6 +29,7 @@ limiter = Limiter(
 )
 
 # ==================== FUNCIONES DE VALIDACIÓN ====================
+
 def sanitize_input(text):
     """Limpia y valida la entrada del usuario"""
     if not text or not isinstance(text, str):
@@ -50,6 +51,30 @@ def sanitize_input(text):
     for pattern in dangerous_patterns:
         if re.search(pattern, text, re.IGNORECASE):
             return None
+    
+    # ==================== NUEVAS VALIDACIONES ====================
+    
+    # Rechaza mensajes que solo contengan caracteres repetidos
+    # Ejemplo: "???", "!!!", "....", "''''", etc.
+    if len(set(text)) <= 2 and len(text) > 2:
+        return None
+    
+    # Rechaza mensajes con más de 5 caracteres especiales consecutivos
+    if re.search(r'[^a-zA-Z0-9\s]{6,}', text):
+        return None
+    
+    # Rechaza mensajes que sean solo puntuación/símbolos
+    # Debe tener al menos una letra o número
+    if not re.search(r'[a-zA-Z0-9áéíóúñÁÉÍÓÚÑ]', text):
+        return None
+    
+    # Calcula ratio de caracteres alfanuméricos vs especiales
+    alphanumeric = len(re.findall(r'[a-zA-Z0-9áéíóúñÁÉÍÓÚÑ]', text))
+    total = len(text)
+    
+    # Si menos del 30% son caracteres alfanuméricos, rechazar
+    if total > 0 and (alphanumeric / total) < 0.3:
+        return None
     
     return text
 
